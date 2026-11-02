@@ -1,0 +1,75 @@
+#!/bin/sh
+# ReleaseScout Beta 2 install entrypoint.
+#
+# Tester command:
+#
+#   curl -fsSL https://raw.githubusercontent.com/KoriM14/releasescout-beta/main/install | sh
+#
+# This script does not choose a platform, unpack an archive, or check a
+# checksum. It downloads install.sh from the Beta 2 release and passes the
+# immutable manifest. The installer remains authoritative.
+#
+# The release assets live at the default host below:
+#
+#   install.sh
+#   releasescout-release
+#   the platform archives named by that manifest
+#
+# RELEASESCOUT_BETA_BASE replaces that host for a local HTTP rehearsal.
+# Testers do not set it. http is accepted only for 127.0.0.1 and localhost,
+# which is the same loopback exception the installer uses for manifests.
+
+set -eu
+
+DEFAULT_BASE="https://github.com/KoriM14/releasescout-beta/releases/download/v0.1.0-beta.2"
+
+fail() {
+    printf '%s\n' "ReleaseScout installer" "" "Could not install ReleaseScout." "" "$1" ""
+    exit 1
+}
+
+strip_trailing_slashes() {
+    value=$1
+    while :; do
+        case "$value" in
+            */) value=${value%/} ;;
+            *) break ;;
+        esac
+    done
+    printf '%s' "$value"
+}
+
+base=$(strip_trailing_slashes "${RELEASESCOUT_BETA_BASE:-$DEFAULT_BASE}")
+case "$base" in
+    *[\ \$\"\'\`\;\|\&]*)
+        fail "The beta download address is not one this installer will use."
+        ;;
+    https://?*) ;;
+    http://127.0.0.1:?*|http://127.0.0.1/?*|http://localhost:?*|http://localhost/?*) ;;
+    *)
+        fail "The beta download address is not one this installer will use."
+        ;;
+esac
+
+if ! command -v curl >/dev/null 2>&1; then
+    fail "This installer needs curl to download ReleaseScout."
+fi
+
+workdir=$(mktemp -d "${TMPDIR:-/tmp}/releasescout-beta.XXXXXX") ||
+    fail "Could not prepare a temporary download directory."
+cleanup() {
+    rm -rf "$workdir"
+}
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+
+installer=$workdir/install.sh
+if ! curl -fsSL --retry 3 --retry-delay 1 -o "$installer" "$base/install.sh"; then
+    fail "Could not download the ReleaseScout installer."
+fi
+if [ ! -s "$installer" ]; then
+    fail "The ReleaseScout installer download was empty."
+fi
+
+sh "$installer" --manifest-url "$base/releasescout-release"
