@@ -1,12 +1,12 @@
 #!/bin/sh
-# ReleaseScout Beta 3 install entrypoint.
+# ReleaseScout Beta 4 install entrypoint.
 #
 # Tester command:
 #
 #   curl -fsSL https://raw.githubusercontent.com/KoriM14/releasescout-beta/main/install | sh
 #
 # This script does not choose a platform, unpack an archive, or check a
-# checksum. It downloads install.sh from the Beta 3 release and passes the
+# checksum. It downloads install.sh from the Beta 4 release and passes the
 # immutable manifest. The installer remains authoritative.
 #
 # The release assets live at the default host below:
@@ -21,7 +21,7 @@
 
 set -eu
 
-DEFAULT_BASE="https://github.com/KoriM14/releasescout-beta/releases/download/v0.1.0-beta.3"
+DEFAULT_BASE="https://github.com/KoriM14/releasescout-beta/releases/download/v0.1.0-beta.4"
 
 fail() {
     printf '%s\n' "ReleaseScout installer" "" "Could not install ReleaseScout." "" "$1" ""
